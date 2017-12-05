@@ -1,7 +1,7 @@
 # MTStreamPerf
 
 ## About MTStreamPerf
-Network factors of streaming media are hard to quantify.The first step in streaming media is to analyze the quality of stream.MTStreamPerf aims to quantify the quality of incoming streaming data. MTStreamPerf supports some network protocols such as TCP/UDP/HTTP and RTSP.
+Network factors of streaming media are hard to quantify.*MTStreamPerf* is a bandwidth measurement tools for *stream media* over TCP/UDP/HTTP/RTSP. *MTStreamPerf* supports various parameters for precise controls. For each test it reports the measured throughput/bitrate, loss, and other parameters. *MTStreamPerf* aims to quantify the quality of incoming streaming data. 
 
 ## Architecture for MTStreamPerf
 
