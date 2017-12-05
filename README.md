@@ -24,5 +24,5 @@ I |<--QOS Report--|I
 
 ## To do List
 - [ ] documentions
-- [ ] support fec in rtsp server/client
+- [ ] support forward error correction(FEC) in rtsp server/client
 - [ ] improve the stability
