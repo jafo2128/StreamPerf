@@ -1,14 +1,28 @@
+/*
+ *      Copyright (C) 2017-2020 MediaTime
+ *      http://media-tm.com (shareviews@sina.com)
+ *
+ *  This Program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *
+ *  This Program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with MediaTime; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
+ *
+ *       original author: shareviews@sina.com (2017-12-XX) without permission
+ */
+ 
 #ifndef MTPERFTASK_H_INCLUDED
 #define MTPERFTASK_H_INCLUDED
 
 #include "MTTask.h"
-#ifdef WIN32
-    #include <Winsock2.h>
-#else
-    #include <sys/types.h>
-    #include <sys/socket.h>
-    #define closesocket close
-#endif
 
 typedef enum {
     PERF_ERROR_NONE   = 0,
@@ -27,48 +41,43 @@ typedef enum {
     SOCK_READY_MAX    = 5,
 } SOCK_READY_TYPE;
 
+struct task_settings;
+struct task_stats;
 class MTPerfTask : public MTTask {
 public:
-    uint32_t mPort;
-    char     mUri[1024];
-    uint32_t mPktSeq;
+    struct task_settings*  mTaskSettings;
+    struct task_stats*     mTaskStats;
 public:
     MTPerfTask();
     ~MTPerfTask();
-    void initTaskParams(uint32_t port, const char* media_uri);
-    int  selectSock(int sock, bool read, bool write, uint32_t timeout_ms);
-    int  recordNalCRC(const char* rawCRC);
-    int  calcNalCRC(const char* nal, char* crc);
-    virtual int doTask(void* args);
+    struct task_settings* getTaskSettings();
+    struct task_stats*    getTaskStats();
 
+    virtual int  netInit() = 0;
+    virtual int  netListen() = 0;
+    virtual int  netAccept() = 0;
+    virtual int  netConnect() = 0;
+    virtual int  netSend() = 0;
+    virtual int  netRecv() = 0;
+    virtual int  doTask(void* args);
+    virtual int  recordNalCRC(const char* rawCRC);
+    virtual int  calcNalCRC(const char* nal, char* crc);
+
+private:
+    int initDefaultTaskParams();
 };
 
-class MTInsightTaskServer : public MTPerfTask {
+class MTPerfTaskTCP : public MTPerfTask {
 public:
     int doTask(void* args);
 };
 
-class MTInsightTaskClient : public MTPerfTask {
+class MTPerfTaskHTTP : public MTPerfTask {
 public:
     int doTask(void* args);
 };
 
-class MTMediaTCPTaskServer : public MTPerfTask {
-public:
-    int doTask(void* args);
-};
-
-class MTMediaTCPTaskClient : public MTPerfTask {
-public:
-    int doTask(void* args);
-};
-
-class MTMediaUDPTaskServer : public MTPerfTask {
-public:
-    int doTask(void* args);
-};
-
-class MTMediaUDPTaskClient : public MTPerfTask {
+class MTPerfTaskRTSP : public MTPerfTask {
 public:
     int doTask(void* args);
 };

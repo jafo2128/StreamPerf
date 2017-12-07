@@ -7,7 +7,7 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="bin/Debug/libMTPerfBase" prefix_auto="1" extension_auto="1" />
+				<Option output="../built/MTPerfBase" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="" />
 				<Option object_output="obj/Debug/" />
 				<Option type="2" />
@@ -21,13 +21,13 @@
 				</Compiler>
 				<Linker>
 					<Add option="-m32" />
-					<Add library="../third-party/WS2_32.Lib" />
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="bin/Release/libMTPerfBase" prefix_auto="1" extension_auto="1" />
+				<Option output="bin/Release/MTPerfBase" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="" />
 				<Option object_output="obj/Release/" />
-				<Option type="1" />
+				<Option type="2" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="/O2" />
@@ -41,20 +41,25 @@
 		<Unit filename="MTBase64.cpp" />
 		<Unit filename="MTLog.cpp" />
 		<Unit filename="MTPerfTask.cpp" />
+		<Unit filename="MTPerfTaskUDP.cpp" />
 		<Unit filename="MTPerfUtil.cpp" />
 		<Unit filename="MTTask.cpp" />
 		<Unit filename="MTTaskRunner.cpp" />
+		<Unit filename="MTTimer.cpp" />
 		<Unit filename="includes/Define.h" />
 		<Unit filename="includes/MTBase64.h" />
 		<Unit filename="includes/MTCrc32.h" />
 		<Unit filename="includes/MTLog.h" />
 		<Unit filename="includes/MTMD5.h" />
+		<Unit filename="includes/MTPerf.h" />
 		<Unit filename="includes/MTPerfTask.h" />
+		<Unit filename="includes/MTPerfTaskUDP.h"/>
 		<Unit filename="includes/MTPerfUtil.h" />
 		<Unit filename="includes/MTRTSP.h" />
 		<Unit filename="includes/MTRTSPClient.h" />
 		<Unit filename="includes/MTTask.h" />
 		<Unit filename="includes/MTTaskRunner.h" />
+		<Unit filename="includes/MTTimer.h" />
 		<Unit filename="includes/RTP.h" />
 		<Extensions>
 			<code_completion />

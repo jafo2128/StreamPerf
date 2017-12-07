@@ -1,7 +1,6 @@
-#pragma once
 /*
- *      Copyright (C) 2017-2020 Team MediaTime_Toolkits
- *      http://mediatime.com
+ *      Copyright (C) 2017-2020 MediaTime
+ *      http://media-tm.com (shareviews@sina.com)
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,11 +13,15 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with MediaTime_Toolkits; see the file COPYING.  If not, see
+ *  along with MediaTime; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
+ *  Original Author: Team XBMC 
+ *      Modified by: shareviews@sina.com (2017-12-XX) without permission
  */
 
+#ifndef MT_BASE64_INCLUDE
+#define MT_BASE64_INCLUDE
 #include <string>
 
 class Base64
@@ -36,3 +39,5 @@ public:
 private:
   static const std::string m_characters;
 };
+
+#endif

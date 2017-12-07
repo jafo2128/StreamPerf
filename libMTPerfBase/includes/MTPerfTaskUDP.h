@@ -16,19 +16,24 @@
  *  along with MediaTime; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
- *      Original Author: shareviews@sina.com (2017-12-XX)
- *   Inspiration Source: iperf
+ *       original author: shareviews@sina.com (2017-12-XX) without permission
  */
-
  
-#ifndef DEFINE_H_INCLUDED
-#define DEFINE_H_INCLUDED
+#ifndef MTPERFTASKUDP_H_INCLUDED
+#define MTPERFTASKUDP_H_INCLUDED
 
-#include "MTLog.h"
-#include "MTTaskRunner.h"
 #include "MTPerfTask.h"
-#include "MTPerfUtil.h"
 
-//#ifdef WIN32
+class MTPerfTaskUDP : public MTPerfTask {
+public:
+    virtual int  netInit();
+    virtual int  netListen();
+    virtual int  netAccept();
+    virtual int  netConnect();
+    virtual int  netSend();
+    virtual int  netRecv();
+    int doTask(void* args);
+    int doTask2(void* args);
+};
 
-#endif // DEFINE_H_INCLUDED
+#endif // MTPERFTASKUDP_H_INCLUDED

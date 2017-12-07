@@ -1,5 +1,42 @@
+/*
+ *      Copyright (C) 2017-2020 MediaTime
+ *      http://media-tm.com (shareviews@sina.com)
+ *
+ *  This Program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *
+ *  This Program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with MediaTime; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
+ *
+ *      Original Author: shareviews@sina.com (2017-12-XX)
+ *   Inspiration Source: iperf
+ */
+ 
 #ifndef MTPERF_H_INCLUDED
 #define MTPERF_H_INCLUDED
+
+#ifdef WIN32
+    #include <Winsock2.h>
+#else
+    #include <sys/types.h>
+    #include <sys/socket.h>
+    #define closesocket close
+#endif
+#include "MTTimer.h"
+
+/* default settings */
+#define P_TCP SOCK_STREAM
+#define P_UDP SOCK_DGRAM
+#define DEFAULT_UDP_BLKSIZE 1460 /* default is dynamically set, else this */
+#define DEFAULT_TCP_BLKSIZE (128 * 1024)  /* default read/write block size */
 
 /* default settings */
 #define DEFAULT_PORT 8989  /* default port to listen on*/
@@ -13,6 +50,8 @@
 
 #define MAX_RESULT_STRING 4096
 #define MAX_UDP_BUFFER_EXTRA 1024
+#define MAX_BUFFER_SIZE 1024
+#define MAX_SLEEP_TIME  100 /*us*/
 
 /* constants for command line arg sanity checks */
 #define MB (1024 * 1024)
@@ -107,7 +146,6 @@ struct task_settings
 
     uint64_t   bytes_sent;
     uint64_t   blocks_sent;
-    struct task_stats *perf_stats;
 };
 
 #endif // MTPERF_H_INCLUDED
