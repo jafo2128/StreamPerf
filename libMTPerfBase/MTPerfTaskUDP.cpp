@@ -24,200 +24,295 @@
 
 #include "Define.h"
 #include "MTPerf.h"
+#include "MTSockUtil.h"
 
 #define TAG "MTPerfTaskUDP"
 
 int  MTPerfTaskUDP::netInit() {
-    return -1;
+    return 0;
 }
+
+/*
+ * netListen
+ *
+ * Start up a listener for UDP stream connections.  Unlike for TCP,
+ * there is no listen(2) for UDP.  This socket will however accept
+ * a UDP datagram from a client (indicating the client's presence).
+ */
 int  MTPerfTaskUDP::netListen() {
-    return -1;
+    int sock;
+    if ((sock = mt_sock_bind(mTaskSettings->sa_family, P_UDP,
+                            mTaskSettings->local_host, mTaskSettings->remote_port)) < 0) {
+        return NET_ERROR_HARD;
+    }
+
+    return sock;
 }
+
+/*
+ * MTPerfTaskUDP::netAccept()
+ *
+ * Accepts a new UDP "connection"
+ */
 int  MTPerfTaskUDP::netAccept() {
-    return -1;
+    struct sockaddr_storage sa_peer;
+    int       buf;
+    socklen_t len;
+    int  err, sock;
+    struct task_settings*  setting = mTaskSettings;
+
+    /*
+     * Get the current outstanding socket.  This socket will be used to handle
+     * data transfers and a new "listening" socket will be created.
+     */
+    err  = NET_ERROR_NONE;
+    sock = setting->prot_listener;
+
+    /*
+     * Grab the UDP packet sent by the client.  From that we can extract the
+     * client's address, and then use that information to bind the remote side
+     * of the socket to the client.
+     */
+    len = sizeof(sa_peer);
+    if ((err = recvfrom(sock, (char*)&buf, sizeof(buf), 0, (struct sockaddr *)&sa_peer, &len)) < NET_ERROR_NONE) {
+        MTLog::LogEx(TAG, __FUNCTION__, "Fail to recvfrom, error:%s", mt_last_sock_error());
+        return NET_ERROR_HARD;
+    }
+
+    if (connect(sock, (struct sockaddr *)&sa_peer, len) < NET_ERROR_NONE) {
+        MTLog::LogEx(TAG, __FUNCTION__, "Fail to connect, error:%s", mt_last_sock_error());
+        return NET_ERROR_HARD;
+    }
+
+    /* check and set socket buffer sizes */
+    if(mt_sock_check_bufsize(sock, setting->sock_bufsize, setting->block_size, setting->debug) < NET_ERROR_NONE) {
+        MTLog::LogEx(TAG, __FUNCTION__, "Fail to check_bufsize, error:%s", mt_last_sock_error());
+        return NET_ERROR_HARD;
+    }
+    /* increase socket buffer sizes if default is small*/
+    if(setting->sock_bufsize == 0) {
+        setting->sock_bufsize = setting->block_size + MAX_UDP_BUFFER_EXTRA;
+        if(mt_sock_check_bufsize(sock, setting->sock_bufsize, setting->block_size, setting->debug) < NET_ERROR_NONE) {
+            MTLog::LogEx(TAG, __FUNCTION__, "Fail to check_bufsize, error:%s", mt_last_sock_error());
+            return NET_ERROR_HARD;
+        }
+    }
+
+
+    /*
+     * Create a new "listening" socket to replace the one we were using before.
+     */
+    setting->prot_listener = mt_sock_bind(setting->sa_family, P_UDP, setting->local_host, setting->remote_port);
+    if (setting->prot_listener < 0) {
+        MTLog::LogEx(TAG, __FUNCTION__, "Fail to mt_sock_bind, error:%s", mt_last_sock_error());
+        return NET_ERROR_HARD;
+    }
+
+    FD_SET(setting->prot_listener, &setting->read_set);
+    setting->max_fd = (setting->max_fd < setting->prot_listener) ? setting->prot_listener : setting->max_fd;
+
+    /* Let the client know we're ready "accept" another UDP "stream" */
+    buf = 987654321;		/* any content will work here */
+    if (mt_sock_send(sock, (const char*)&buf, sizeof(buf)) < NET_ERROR_NONE) {
+        MTLog::LogEx(TAG, __FUNCTION__, "Fail to mt_sock_send, error:%s", mt_last_sock_error());
+        return NET_ERROR_HARD;
+    }
+
+    return sock;
 }
+
+#define CONNECT_FORMAT "local_host:%-16s local_port:%d use sa_family:%d\n remote_host:%-16s remote_port:%d"
 int  MTPerfTaskUDP::netConnect() {
-    return -1;
+    int ts_buf, sock = 0;
+    struct task_settings*  setting = mTaskSettings;
+
+    /* create and bind local sock, and connect server*/
+    if(setting->debug) {
+        MTLog::LogEx(TAG, __FUNCTION__, CONNECT_FORMAT,
+                           setting->local_host,  setting->local_port, setting->sa_family,
+                           setting->local_host,  setting->local_port);
+    }
+    if((sock = mt_sock_connect_server(setting->sa_family, P_UDP,
+                     setting->local_host,  setting->local_port,
+                     setting->remote_host, setting->remote_port, -1/*timeout*/)) < NET_ERROR_NONE) {
+        MTLog::LogEx(TAG, __FUNCTION__, "Fail to connect_server, error:%s", mt_last_sock_error());
+        return NET_ERROR_HARD;
+    }
+
+    /* check and set socket buffer sizes */
+    if(mt_sock_check_bufsize(sock, setting->sock_bufsize, setting->block_size, setting->debug) < NET_ERROR_NONE) {
+        MTLog::LogEx(TAG, __FUNCTION__, "Fail to check_bufsize, error:%s", mt_last_sock_error());
+        return NET_ERROR_HARD;
+    }
+    /* increase socket buffer sizes if default is small*/
+    if(setting->sock_bufsize == 0) {
+        setting->sock_bufsize = setting->block_size + MAX_UDP_BUFFER_EXTRA;
+        if(mt_sock_check_bufsize(sock, setting->sock_bufsize, setting->block_size, setting->debug) < NET_ERROR_NONE) {
+            MTLog::LogEx(TAG, __FUNCTION__, "Fail to check_bufsize, error:%s", mt_last_sock_error());
+            return NET_ERROR_HARD;
+        }
+    }
+
+#ifdef SO_RCVTIMEO
+    /* enable timeout for socket. */
+    struct timeval tv;
+    tv.tv_sec  = 3;
+    tv.tv_usec = 0;
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(struct timeval));
+#endif
+
+    /*
+     * Let the server know we're here.
+     * The server learns our address by obtaining its peer's address.
+     */
+    ts_buf = 123456789;		/* this can be pretty much anything */
+    if(mt_sock_send(sock, (const char*)&ts_buf, sizeof(ts_buf)) < NET_ERROR_NONE) {
+        MTLog::LogEx(TAG, __FUNCTION__, "Fail to mt_sock_send, error:%s", mt_last_sock_error());
+        return NET_ERROR_HARD;
+    }
+
+    /*
+     * Wait until the server replies back to us.
+     */
+    if(mt_sock_recv(sock, (char*)&ts_buf, sizeof(ts_buf)) < NET_ERROR_NONE) {
+        MTLog::LogEx(TAG, __FUNCTION__, "Fail to mt_sock_recv, error:%s", mt_last_sock_error());
+        return NET_ERROR_HARD;
+    }
+
+    return NET_ERROR_NONE;
 }
 int  MTPerfTaskUDP::netSend() {
-    return -1;
+    int err = NET_ERROR_NONE;
+    uint32_t  sec, usec, pack_cnt;
+    struct timeval now_tv;
+    struct task_settings*  setting = mTaskSettings;
+    struct task_stats*     stats   = mTaskStats;
+
+    mTaskStats->packet_index++;
+    gettimeofday(&now_tv, NULL);
+    sec      = htonl(now_tv.tv_sec);
+    usec     = htonl(now_tv.tv_usec);
+    pack_cnt = htonl(mTaskStats->packet_index);
+    memcpy(mTsBuffer,   &sec,      sizeof(sec));
+    memcpy(mTsBuffer+4, &usec,     sizeof(usec));
+    memcpy(mTsBuffer+8, &pack_cnt, sizeof(pack_cnt));
+    err = mt_sock_send(stats->sock, mTsBuffer, setting->block_size);
+    if (err < NET_ERROR_NONE){
+        MTLog::LogEx(TAG, __FUNCTION__, "Fail to mt_sock_send, error:%s", mt_last_sock_error());
+        mTaskStats->packet_index--;
+        return NET_ERROR_HARD;
+    }else{
+        mTaskStats->bytes_send += err;
+        mTaskStats->blocks_recv++;
+        mTaskStats->bytes_send_interval += err;
+    }
+
+    if(setting->debug) {
+        MTLog::LogEx(TAG, __FUNCTION__, "sent %d bytes, total %lld packets, content:%12.12s",
+                          setting->block_size, mTaskStats->packet_index, mTsBuffer);
+    }
+
+    return err;
 }
+
 int  MTPerfTaskUDP::netRecv() {
-    return -1;
+    int err = NET_ERROR_NONE;
+    uint32_t pack_index;
+    struct timeval send_tv, recv_tv;
+    struct task_settings*  setting = mTaskSettings;
+
+    uint64_t transit = 0, transit_diff = 0;
+    err = mt_sock_recv(mTaskStats->sock, mTsBuffer, setting->block_size);
+
+    /*
+     * If we got an error in the read, or if we didn't read anything
+     * because the underlying read(2) got a EAGAIN, then skip packet
+     * processing.
+     */
+    if (err < NET_ERROR_NONE) {
+        MTLog::LogEx(TAG, __FUNCTION__, "Fail to mt_sock_send, error:%s", mt_last_sock_error());
+        return NET_ERROR_HARD;
+    } else {
+        mTaskStats->blocks_recv++;
+        mTaskStats->bytes_recv += err;
+        mTaskStats->bytes_recv_interval += err;
+    }
+
+	memcpy(&(send_tv.tv_sec),  mTsBuffer,   sizeof(send_tv.tv_sec));
+	memcpy(&(send_tv.tv_usec), mTsBuffer+4, sizeof(send_tv.tv_usec));
+	memcpy(&pack_index, mTsBuffer+8, sizeof(pack_index));
+	send_tv.tv_sec  = ntohl(send_tv.tv_sec);
+	send_tv.tv_usec = ntohl(send_tv.tv_usec);
+	pack_index = ntohl(pack_index);
+
+    if (setting->debug){
+        MTLog::LogEx(TAG, __FUNCTION__, "pack_index = %d; packet_index=%d",
+                                         pack_index, mTaskStats->packet_index);
+    }
+
+    /*
+     * Try to handle out of order packets.
+     * It's not rigorous and accurate
+     */
+    if (pack_index >= mTaskStats->packet_index + 1) {
+
+	     /* Forward, but is there a gap in sequence numbers? */
+        if (pack_index > mTaskStats->packet_index + 1) {
+	    /* There's a gap so count that as a loss. */
+            mTaskStats->packet_cnt_error += (pack_index - 1) - mTaskStats->packet_index;
+        }
+	    /* Update the highest sequence number seen so far. */
+        mTaskStats->packet_index = pack_index;
+    } else {
+        /*Sequence number went backward--out-of-order packet.*/
+        mTaskStats->packet_cnt_outorder++;
+
+        /*
+         * If we have lost packets, then the fact that we are now
+         * seeing an out-of-order packet offsets a prior sequence
+         * number gap that was counted as a loss.  So we can take
+         * away a loss.
+         */
+        if (mTaskStats->packet_cnt_error > 0) mTaskStats->packet_cnt_error--;
+
+        /* Log the out-of-order packet */
+        if (setting->debug){
+            MTLog::LogEx(TAG, __FUNCTION__, "OUT OF ORDER; incoming_sequence =%d, but expected incoming_sequence=%d",
+                                             pack_index, mTaskStats->packet_index);
+        }
+    }
+
+    /*
+     * jitter measurement
+     *
+     * This computation is based on RFC 1889 (specifically
+     * sections 6.3.1 and A.8).
+     *
+     * Note that synchronized clocks are not required since
+     * the source packet delta times are known.  Also this
+     * computation does not require knowing the round-trip
+     * time.
+     */
+    gettimeofday(&recv_tv, NULL);
+    transit = timeval_diff(&send_tv, &recv_tv);
+    transit_diff = transit - mTaskStats->prev_transit;
+    transit_diff = (transit_diff>0)?transit_diff:(-transit_diff);
+    mTaskStats->prev_transit = transit;
+    mTaskStats->jitter += (transit_diff - mTaskStats->jitter) / 16.0;
+
+    return err;
 }
 
 /**
  ** Class MTPerfTaskUDP(Server)
  **/
 int MTPerfTaskUDP::doTask(void* args) {
-    int    sock_server = 0;
-    int    data_len    = 0;
-    int    err         = PERF_ERROR_NONE;
-    int    invalid_cnt = 0;
-    char   buffer[MAX_BUFFER_SIZE];
-    struct sockaddr_in addr_server;
-    struct sockaddr_in addr_client;
-    addr_server.sin_family = AF_INET;
-    addr_server.sin_port = htons(mTaskSettings->server_port);
-    addr_server.sin_addr.s_addr = htonl(INADDR_ANY);
-
-#ifdef WIN32
-    WSADATA wsaData;
-    WSAStartup(MAKEWORD(2, 2), &wsaData);
-#endif  /*  WIN32  */
-
-    if ( (sock_server = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        MTLog::LogEx(TAG, __FUNCTION__, "UDP Server(%p) Fail to socket(SOCK_DGRAM) on port(%d)",
-                                     this, mTaskSettings->server_port);
-        sock_server = 0;
-        err = PERF_ERROR_SOCK;
-        goto TAG_ERROR;
-    }
-    if ( bind(sock_server, (struct sockaddr *)&addr_server, sizeof(addr_server)) < 0) {
-        MTLog::LogEx(TAG, __FUNCTION__, "UDP Server(%p) Fail to bind(SOCK_DGRAM) on port(%d)",
-                                     this, mTaskSettings->server_port);
-        err = PERF_ERROR_BIND;
-        goto TAG_ERROR;
-    }
-
-    mTaskStats->blocks = 0;
-    data_len = sizeof(addr_client);
-    addr_client.sin_family = AF_INET;
-    addr_client.sin_port = htons(mTaskSettings->server_port-10);
-    addr_client.sin_addr.s_addr = inet_addr(mTaskSettings->server_hostname);
-    //data_len = recvfrom(sock_server, buffer, MAX_BUFFER_SIZE-1, 0, (struct sockaddr*)&addr_client, &data_len);
-
-    while ((!mCancel) && (data_len > 0) && (mTaskStats->blocks < MAX_SEQ_NUM)) {
-        //err = selectSock(sock_server, false/*read*/, true/*write*/, 600/*timeout-ms*/);
-        switch(err){
-            case SOCK_READY_WRITE:
-                memset(buffer, 0, MAX_BUFFER_SIZE);
-                snprintf(buffer, MAX_BUFFER_SIZE, "%s device[%p] What do you like?", mTaskSettings->name, this);
-
-                if( sendto(sock_server, buffer, strlen(buffer), 0, (struct sockaddr *)&addr_client, sizeof(addr_client)) < 0){
-                    MTLog::LogEx(TAG, __FUNCTION__, "UDP Server(%p) died, Fail to sendto", this);
-                    err = PERF_ERROR_TRANS;
-                    goto TAG_ERROR;
-                }else{
-                    MTPerfUtil::getInstance()->addPerfNal(2, mTaskStats->blocks, buffer, true/*src_perf--I'm server*/);
-                    invalid_cnt = 0;
-                    mTaskStats->blocks++;
-                }
-
-                break;
-            case SOCK_READY_ERR:
-                goto TAG_ERROR;
-                break;
-            default:
-                invalid_cnt++;
-                if(invalid_cnt>5){
-                    goto TAG_ERROR;
-                    break;
-                }
-                break;
-        }
-        usleep(MAX_SLEEP_TIME);
-    }
-    MTLog::LogEx(TAG, __FUNCTION__, "UDP Server(%p) Task Done(%d)", this);
-
-TAG_ERROR:
-    mCancel = true;
-    if(sock_server>0) {
-        close(sock_server);
-    }
-    #ifdef WIN32
-        WSACleanup();
-    #endif
-    return err;
+    return NET_ERROR_HARD;
 }
 
 /**
  ** Class MTPerfTaskUDP(Client)
  **/
 int MTPerfTaskUDP::doTask2(void* args) {
-    int    sock_client = 0;
-    int    data_len    = 0;
-    int    err         = PERF_ERROR_NONE;
-    char   buffer[MAX_BUFFER_SIZE];
-    struct sockaddr_in addr_client;
-    struct sockaddr_in addr_server;
-#ifdef WIN32
-    WSADATA wsaData;
-    WSAStartup(MAKEWORD(2, 2), &wsaData);
-#endif  /*  WIN32  */
-
-    if ((sock_client = socket(AF_INET, SOCK_DGRAM, 0)) < 0){
-        MTLog::LogEx(TAG, __FUNCTION__, "UDP Client(%x) Fail to socket(SOCK_DGRAM) on port(%d)",
-                                     this, mTaskSettings->server_port);
-        sock_client = 0;
-        err = PERF_ERROR_SOCK;
-        goto TAG_ERROR;
-    }
-    addr_client.sin_family = AF_INET;
-    addr_client.sin_port = htons(mTaskSettings->server_port - 10);
-    addr_client.sin_addr.s_addr = htonl(INADDR_ANY);
-    if (addr_client.sin_addr.s_addr == INADDR_NONE) {
-        MTLog::LogEx(TAG, __FUNCTION__, "UDP Client(%x) Fail to sockaddr_in, target server: %s:%d",
-                                         this, mTaskSettings->server_hostname, mTaskSettings->server_port);
-        err = PERF_ERROR_ADDR;
-        goto TAG_ERROR;
-    }
-
-    if( bind(sock_client, (struct sockaddr*)&addr_client, sizeof(addr_client)) < 0) {
-        MTLog::LogEx(TAG, __FUNCTION__, "UDP Client(%x) Fail to bind, target server: %s:%d",
-                                         this, mTaskSettings->server_hostname, mTaskSettings->server_port);
-        err = PERF_ERROR_BIND;
-        goto TAG_ERROR;
-    }
-
-    //Specify Traget Server(Optional)
-    addr_server.sin_family = AF_INET;
-    addr_server.sin_port = htons(mTaskSettings->server_port);
-    addr_server.sin_addr.s_addr = inet_addr(mTaskSettings->server_hostname);
-    if((connect(sock_client,(struct sockaddr*)&addr_server,sizeof(struct sockaddr_in))) < 0){
-        MTLog::LogEx(TAG, __FUNCTION__, "UDP Client(%x) Fail to connect, target server: %s:%d",
-                                         this, mTaskSettings->server_hostname, mTaskSettings->server_port);
-        err = PERF_ERROR_BIND;
-        goto TAG_ERROR;
-    }
-
-    snprintf(buffer, MAX_BUFFER_SIZE-1, "%s", "udp transport");
-    //data_len = sendto(sock_client, buffer, strlen(buffer), 0, (struct sockaddr *)&addr_server, sizeof(addr_server));
-    data_len = sizeof(addr_client);
-    while (!mCancel && (mTaskStats->blocks <(MAX_SEQ_NUM-100))) {
-        //err = selectSock(sock_client, true/*read*/, false/*write*/, 600/*timeout-ms*/);
-        switch(err){
-            case SOCK_READY_READ:
-                memset(buffer, 0, MAX_BUFFER_SIZE);
-                if( recvfrom(sock_client, buffer, MAX_BUFFER_SIZE-1, 0, (struct sockaddr*)&addr_server, &data_len) < 0){
-                    MTLog::LogEx(TAG, __FUNCTION__, "UDP Client(%x) died, Fail to recvfrom", this);
-                    err = PERF_ERROR_TRANS;
-                    goto TAG_ERROR;
-                } else {
-                    char seq_buf[8] = {""};
-                    strncpy(seq_buf, buffer, 6);
-                    mTaskStats->blocks = atoi(seq_buf);
-                    MTPerfUtil::getInstance()->addPerfNal(2, mTaskStats->blocks, buffer, false/*src_perf : I'm client*/);
-                    MTLog::LogEx(TAG, __FUNCTION__, "UDP Client(%s:%d) Seq=%d Says:%s",
-                                 inet_ntoa(addr_server.sin_addr), ntohs(addr_server.sin_port), mTaskStats->blocks, buffer);
-                }
-                break;
-            case SOCK_READY_ERR:
-                goto TAG_ERROR;
-                break;
-            default:
-                break;
-        }
-        usleep(MAX_SLEEP_TIME);
-    }
-    MTLog::LogEx(TAG, __FUNCTION__, "UDP Client(%x) task done....", this);
-TAG_ERROR:
-    mCancel = true;
-    if(sock_client>0) {
-        close(sock_client);
-    }
-    #ifdef WIN32
-        WSACleanup();
-    #endif
-    return err;
+    return NET_ERROR_HARD;
 }
