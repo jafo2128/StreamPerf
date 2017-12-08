@@ -24,7 +24,7 @@
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="bin/Release/MTPerfBase" prefix_auto="1" extension_auto="1" />
+				<Option output="../built/MTPerfBase" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="" />
 				<Option object_output="obj/Release/" />
 				<Option type="2" />
@@ -43,6 +43,7 @@
 		<Unit filename="MTPerfTask.cpp" />
 		<Unit filename="MTPerfTaskUDP.cpp" />
 		<Unit filename="MTPerfUtil.cpp" />
+		<Unit filename="MTSockUtil.cpp" />
 		<Unit filename="MTTask.cpp" />
 		<Unit filename="MTTaskRunner.cpp" />
 		<Unit filename="MTTimer.cpp" />
@@ -53,10 +54,11 @@
 		<Unit filename="includes/MTMD5.h" />
 		<Unit filename="includes/MTPerf.h" />
 		<Unit filename="includes/MTPerfTask.h" />
-		<Unit filename="includes/MTPerfTaskUDP.h"/>
+		<Unit filename="includes/MTPerfTaskUDP.h" />
 		<Unit filename="includes/MTPerfUtil.h" />
 		<Unit filename="includes/MTRTSP.h" />
 		<Unit filename="includes/MTRTSPClient.h" />
+		<Unit filename="includes/MTSockUtil.h" />
 		<Unit filename="includes/MTTask.h" />
 		<Unit filename="includes/MTTaskRunner.h" />
 		<Unit filename="includes/MTTimer.h" />
