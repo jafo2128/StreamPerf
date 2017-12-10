@@ -16,9 +16,9 @@
  *  along with MediaTime; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
- *       original author: shareviews@sina.com (2017-12-XX) without permission
+ *      Original Author: shareviews@sina.com (2017-12-XX)
  */
- 
+
 #ifndef MTTASK_H_INCLUDED
 #define MTTASK_H_INCLUDED
 
@@ -41,6 +41,7 @@ public:
     void          *mArgs;
     uint32_t      mFlags;
     bool          mCancel;
+    char*         mTagName;
 public:
     MTTask();
     virtual ~MTTask();

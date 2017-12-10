@@ -16,9 +16,9 @@
  *  along with MediaTime; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
- *   Original Author: shareviews@sina.com (2017-12-XX) without permission
+ *      Original Author: shareviews@sina.com (2017-12-XX)
  */
- 
+
 #ifndef RTP_H_INCLUDED
 #define RTP_H_INCLUDED
 

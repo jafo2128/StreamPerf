@@ -18,7 +18,7 @@
  *
  *   Original Author: shareviews@sina.com (2017-12-XX)
  */
- 
+
 #include<stdarg.h>
 #include<stdio.h>
 #include "MTLog.h"
@@ -72,16 +72,30 @@ void MTLog::LogD(const char* tag, const char *format, ...) {
 }
 
 void MTLog::LogEx(const char* tag, const char *func, const char *format, ...) {
-  char format_ex[MAX_LOG_SIZE]={0};
-  snprintf(format_ex, MAX_LOG_SIZE, "%16s ==> %s", func, format);
+   char format_ex[MAX_LOG_SIZE]={0};
+   snprintf(format_ex, MAX_LOG_SIZE, "%16s ==> %s", func, format);
 
-  va_list va;
-  va_start(va, format);
-  char message[MAX_LOG_SIZE]={0};
-  vsnprintf(message,sizeof(message), format_ex, va);
-  va_end(va);
+   va_list va;
+   va_start(va, format);
+   char message[MAX_LOG_SIZE]={0};
+   vsnprintf(message,sizeof(message), format_ex, va);
+   va_end(va);
 
-  PrintLog(tag, LOGERROR, message);
+   PrintLog(tag, LOGERROR, message);
+}
+
+void MTLog::LogDebug(const char* tag, const char *func, int debug, const char *format, ...) {
+   if(0 != debug) {
+      char format_ex[MAX_LOG_SIZE]={0};
+      snprintf(format_ex, MAX_LOG_SIZE, "%16s ==> %s", func, format);
+
+      va_list va;
+      va_start(va, format);
+      char message[MAX_LOG_SIZE]={0};
+      vsnprintf(message,sizeof(message), format_ex, va);
+      va_end(va);
+      PrintLog(tag, LOGERROR, message);
+   }
 }
 
 void MTLog::SetLogLevel(int logLevel) {
@@ -90,7 +104,6 @@ void MTLog::SetLogLevel(int logLevel) {
         MTLog::Log(LOGNOTICE, "SetLogLevel logLevel = \"%s\"", logLevelNames[mLogLevel + 1]);
     }
 }
-
 
 bool MTLog::PrintLog(const char* tag, int logLevel, const char* message) {
     if(!CheckLogLevel(logLevel)) {

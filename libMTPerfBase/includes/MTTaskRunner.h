@@ -16,9 +16,9 @@
  *  along with MediaTime; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
- *       original author: shareviews@sina.com (2017-12-XX) without permission
+ *      Original Author: shareviews@sina.com (2017-12-XX)
  */
- 
+
 #ifndef MTTASKRUNNER_H_INCLUDED
 #define MTTASKRUNNER_H_INCLUDED
 

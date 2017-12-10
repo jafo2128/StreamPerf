@@ -16,7 +16,7 @@
  *  along with MediaTime; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
- *       original author: shareviews@sina.com (2017-12-XX) without permission
+ *      Original Author: shareviews@sina.com (2017-12-XX)
  */
 
 #pragma once
@@ -76,6 +76,7 @@ public:
   static void LogE(const char* tag, const char *format, ...);
   static void LogD(const char* tag, const char *format, ...);
   static void LogEx(const char* tag, const char *func, const char *format, ...);
+  static void LogDebug(const char* tag, const char *func, int debug, const char *format, ...);
   static void SetLogLevel(int logLevel);
   static void setLogListener(MTLogListener* listener){mLogListener = listener;};
 private:

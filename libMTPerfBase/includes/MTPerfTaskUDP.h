@@ -16,9 +16,9 @@
  *  along with MediaTime; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
- *       original author: shareviews@sina.com (2017-12-XX) without permission
+ *      Original Author: shareviews@sina.com (2017-12-XX)
  */
- 
+
 #ifndef MTPERFTASKUDP_H_INCLUDED
 #define MTPERFTASKUDP_H_INCLUDED
 
@@ -32,8 +32,18 @@ public:
     virtual int  netConnect();
     virtual int  netSend();
     virtual int  netRecv();
-    int doTask(void* args);
-    int doTask2(void* args);
+    virtual int doTask(void* args);
 };
+
+class MTPerfTaskUDPServer : public MTPerfTaskUDP {
+public:
+    MTPerfTaskUDPServer();
+};
+
+class MTPerfTaskUDPClient : public MTPerfTaskUDP {
+public:
+    MTPerfTaskUDPClient();
+};
+
 
 #endif // MTPERFTASKUDP_H_INCLUDED

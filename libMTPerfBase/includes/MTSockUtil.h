@@ -54,12 +54,16 @@ typedef enum {
 } MT_sock_ERROR_TYPE;
 
 const char* mt_last_sock_error();
+int mt_sock_load();
+int mt_sock_unload();
 int mt_sock_check_bufsize(int sock, int sock_bufsize, int block_size, int debug=0);
-int mt_sock_connect(int sock, const struct sockaddr *sock_addr, socklen_t sock_addr_len, int timeout);
-int mt_sock_connect_server(int sa_family, int proto,
+int mt_sock_connect(int sock, const struct sockaddr *remote_addr, socklen_t remote_addr_len, int timeout);
+int mt_sock_connect(int sock, int sock_domain, int sock_type,
+                    const char* remote_host, int remote_port, int timeout);
+int mt_sock_connect_server(int sock_domain, int sock_type,
                           char *local_host,  int local_port,
                           char *remote_host, int remote_port, int timeout);
-int mt_sock_bind(int sa_family, int proto, char *host_name, int host_port);
+int mt_sock_bind(int sock_domain, int sock_type, char *host_name, int host_port, int debug=0);
 int mt_sock_send(int sock, const char *buf, size_t count);
 int mt_sock_recv(int sock, char *buf, size_t count);
 int mt_sock_sendfile(int from_fd, int to_sock, size_t count);

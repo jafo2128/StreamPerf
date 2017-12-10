@@ -47,6 +47,19 @@ static void getnow( struct timeval* nowP, struct timeval* nowP2 ) {
     }
 }
 
+uint64_t timeval_diff(struct timeval * tv_a, struct timeval * tv_b)
+{
+    uint64_t time1, time2;
+
+    time1 = tv_a->tv_sec*1000000 + tv_a->tv_usec;
+    time2 = tv_b->tv_sec*1000000 + tv_b->tv_usec;
+
+    time1 = time1 - time2;
+    if (time1 < 0)
+        time1 = -time1;
+    return time1;
+}
+
 static void list_add( Timer* t )
 {
     Timer* t2;

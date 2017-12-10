@@ -22,11 +22,30 @@
 #include "MTSockUtil.h"
 #include "MTLog.h"
 #include <unistd.h>
+#include <pthread.h>
 
 #define TAG "MTSockUtil"
 
+static pthread_mutex_t m_sock_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 const char* mt_last_sock_error(){
     return strerror(errno);
+}
+
+int mt_sock_load(){
+#ifdef WIN32
+    WSADATA wsaData;
+    return WSAStartup(MAKEWORD(2, 2), &wsaData);
+#else
+    return NET_ERROR_NONE;
+#endif  /*  WIN32  */
+}
+int mt_sock_unload() {
+#ifdef WIN32
+    return WSACleanup();
+#else
+    return NET_ERROR_NONE;
+#endif
 }
 
 /*
@@ -84,7 +103,7 @@ int mt_sock_check_bufsize(int sock, int sock_bufsize, int block_size, int debug)
     return NET_ERROR_NONE;
 }
 
-int mt_sock_connect(int sock, const struct sockaddr *sock_addr, socklen_t sock_addr_len, int timeout) {
+int mt_sock_connect(int sock, const struct sockaddr *remote_addr, socklen_t remote_addr_len, int timeout) {
 	int err, last_err, flags;
     err = last_err = NET_ERROR_NONE;
 	if (timeout != -1) {
@@ -101,7 +120,7 @@ int mt_sock_connect(int sock, const struct sockaddr *sock_addr, socklen_t sock_a
 	}
 
 
-	if ((err = connect(sock, sock_addr, sock_addr_len)) != 0 ) {
+	if ((err = connect(sock, remote_addr, remote_addr_len)) != 0 ) {
         err      = NET_ERROR_HARD;
         last_err = errno;
 	}
@@ -120,7 +139,44 @@ int mt_sock_connect(int sock, const struct sockaddr *sock_addr, socklen_t sock_a
 	return err;
 }
 
-int mt_sock_connect_server(int sa_family, int proto,
+int mt_sock_connect(int sock, int sock_domain, int sock_type,
+                    const char* remote_host, int remote_port, int timeout){
+    struct addrinfo hints;
+    struct addrinfo* result = NULL;
+    int err, last_err;
+
+    err = last_err = NET_ERROR_NONE;
+    if((NULL==remote_host)||(0==remote_port)) {
+        MTLog::LogDebug(TAG, __FUNCTION__, 1/*debug*/, "Error Parameter remote_host:%s:%d", remote_host, remote_port);
+        err      = NET_ERROR_HARD;
+        goto TAG_ERROR;
+    } else {
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family   = sock_domain;
+        hints.ai_socktype = sock_type;
+        if (getaddrinfo(remote_host, NULL, &hints, &result) != 0) {
+            result        = NULL;
+            err           = NET_ERROR_HARD;
+            last_err      = errno;
+            goto TAG_ERROR;
+        } else {
+            struct sockaddr_in *sin = (struct sockaddr_in *)result->ai_addr;
+            sin->sin_port = htons(remote_port);
+            result->ai_addr  = (struct sockaddr *)sin;
+            MTLog::LogDebug(TAG, __FUNCTION__, 1/*debug*/, "Connect to Server:%s:%d", inet_ntoa(sin->sin_addr), remote_port);
+
+            if (mt_sock_connect(sock, (struct sockaddr *) result->ai_addr, result->ai_addrlen, timeout) < 0) {
+                err      = NET_ERROR_HARD;
+                last_err = errno;
+                goto TAG_ERROR;
+            }
+        }
+    }
+TAG_ERROR:
+    return err;
+}
+
+int mt_sock_connect_server(int sock_domain, int sock_type,
                           char *local_host,  int local_port,
                           char *remote_host, int remote_port, int timeout) {
     struct addrinfo hints;
@@ -133,8 +189,8 @@ int mt_sock_connect_server(int sa_family, int proto,
     if (local_host) {
         local_result = NULL;
         memset(&hints, 0, sizeof(hints));
-        hints.ai_family   = sa_family;
-        hints.ai_socktype = proto;
+        hints.ai_family   = sock_domain;
+        hints.ai_socktype = sock_type;
         if (getaddrinfo(local_host, NULL, &hints, &local_result) != 0) {
             local_result = NULL;
             err          = NET_ERROR_HARD;
@@ -142,27 +198,6 @@ int mt_sock_connect_server(int sa_family, int proto,
             goto TAG_ERROR;
         }
     }
-
-    if(remote_host) {
-        memset(&hints, 0, sizeof(hints));
-        hints.ai_family   = sa_family;
-        hints.ai_socktype = proto;
-        if (getaddrinfo(remote_host, NULL, &hints, &remote_result) != 0) {
-            remote_result = NULL;
-            err           = NET_ERROR_HARD;
-            last_err      = errno;
-            goto TAG_ERROR;
-        }
-    }
-
-    sock = socket(remote_result->ai_family, proto, 0);
-    if ((sock = socket(remote_result->ai_family, proto, 0)) < 0) {
-        sock     = 0;
-        err      = NET_ERROR_HARD;
-        last_err = errno;
-	    goto TAG_ERROR;
-    }
-
     result = local_result;
     if (NULL != result) {
         if (local_port) {
@@ -176,6 +211,25 @@ int mt_sock_connect_server(int sa_family, int proto,
             last_err = errno;
             goto TAG_ERROR;
         }
+    }
+
+    if(remote_host) {
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family   = sock_domain;
+        hints.ai_socktype = sock_type;
+        if (getaddrinfo(remote_host, NULL, &hints, &remote_result) != 0) {
+            remote_result = NULL;
+            err           = NET_ERROR_HARD;
+            last_err      = errno;
+            goto TAG_ERROR;
+        }
+    }
+
+    if ((sock = socket(remote_result->ai_family, sock_type, 0)) < 0) {
+        sock     = 0;
+        err      = NET_ERROR_HARD;
+        last_err = errno;
+	    goto TAG_ERROR;
     }
 
     result = remote_result;
@@ -209,67 +263,87 @@ TAG_ERROR:
     return sock;
 }
 
-int mt_sock_bind(int sa_family, int proto, char *host_name, int host_port) {
+int mt_sock_bind(int sock_domain, int sock_type, char *host_name, int host_port, int debug/*=0*/) {
+    if(pthread_mutex_lock(&m_sock_mutex) != 0) {
+        MTLog::LogDebug(TAG, __FUNCTION__, debug, "Fail to pthread_mutex_lock :%s", mt_last_sock_error());
+    }
     int sock, opt, err, last_err;
     struct addrinfo  hints;
     struct addrinfo* result = NULL;
 
     sock = err = last_err = NET_ERROR_NONE;
     memset(&hints, 0, sizeof(struct addrinfo));
-    if (sa_family == AF_UNSPEC && !host_name) {
+    if (sock_domain == AF_UNSPEC && !host_name) {
         hints.ai_family = AF_INET6;
     } else {
-        hints.ai_family = sa_family;
+        hints.ai_family = sock_domain;
     }
-    hints.ai_socktype = proto;
+    hints.ai_socktype = sock_type;
     hints.ai_flags    = AI_PASSIVE;
-    if (getaddrinfo(host_name, NULL,/*port*/ &hints, &result) != 0) {
-        result = NULL;
-        err = NET_ERROR_HARD;
-        last_err = errno;
-        goto TAG_ERROR;
-     } else {
-        struct sockaddr_in *sock_addr = (struct sockaddr_in *)result->ai_addr;
-        sock_addr->sin_port = htons(host_port);
-        result->ai_addr  = (struct sockaddr *)sock_addr;
-     }
+    if ( host_name && getaddrinfo(host_name, NULL,/*port*/ &hints, &result) == 0) {
+        struct sockaddr_in *psin = (struct sockaddr_in *)result->ai_addr;
+        psin->sin_port           = htons(host_port);
+        result->ai_addr          = (struct sockaddr *)psin;
+    } else {
+        struct sockaddr_in sin;
+        sin.sin_family      = sock_domain; //AF_INET;
+        sin.sin_port        = htons(host_port);
+        sin.sin_addr.s_addr = htonl(INADDR_ANY);
+        result             = &hints;
+        result->ai_addr    = (struct sockaddr *)(&sin);
+        result->ai_addrlen =  sizeof(struct sockaddr_in);
+        MTLog::LogDebug(TAG, __FUNCTION__, 1/*debug*/, "bind(sock=%d, sockaddr_in=:%s:%d)",
+                            sock, inet_ntoa(sin.sin_addr), host_port);
+    }
 
-    if((sock = socket(result->ai_family, proto, 0)) < 0) {
+    if((sock = socket(result->ai_family, result->ai_socktype, 0)) < 0) {
         err = NET_ERROR_HARD;
         last_err = errno;
         goto TAG_ERROR;
+    } else {
+        MTLog::LogDebug(TAG, __FUNCTION__, debug, "create socket OK, sock=%d", sock);
     }
 
     opt = 1;
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &opt, sizeof(opt)) < 0) {
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0) {
         err = NET_ERROR_HARD;
         last_err = errno;
         goto TAG_ERROR;
+    } else {
+        MTLog::LogDebug(TAG, __FUNCTION__, debug, "setsockopt(sock=%d, SO_REUSEADDR...) is OK", sock);
     }
 
     if (bind(sock, (struct sockaddr *) result->ai_addr, result->ai_addrlen) < 0) {
         err = NET_ERROR_HARD;
         last_err = errno;
         goto TAG_ERROR;
+    } else {
+        MTLog::LogDebug(TAG, __FUNCTION__, debug, "bind(sock=%d, ...) is OK", sock);
     }
 
-    if ((proto == SOCK_STREAM)&&(listen(sock, 5) < 0)) {
+    /*TCP:Listen for client connect; UDP has no listen*/
+    if ((sock_type == SOCK_STREAM)&&(listen(sock, 5) < 0)) {
         err = NET_ERROR_HARD;
         last_err = errno;
         goto TAG_ERROR;
     }
+    MTLog::LogDebug(TAG, __FUNCTION__, debug, "back bind(sock=%d, ...) is OK", sock);
 
 TAG_ERROR:
-    if(NULL != result) {
-        freeaddrinfo(result);
-        result = NULL;
+
+    if((NULL != host_name) && (NULL != result)) {
+        //freeaddrinfo(result);
+        //result = NULL;
+        MTLog::LogDebug(TAG, __FUNCTION__, debug, "freeaddrinfo(%p)", result);
     }
     if(NET_ERROR_NONE != err) {
         if(sock > 0) close(sock);
         errno = last_err;
         return err;
     }
-
+    if(pthread_mutex_unlock(&m_sock_mutex) != 0) {
+        MTLog::LogDebug(TAG, __FUNCTION__, debug, "Fail to pthread_mutex_unlock :%s", mt_last_sock_error());
+    }
     return sock;
 }
 
@@ -278,7 +352,7 @@ int mt_sock_send(int sock, const char *buffer, size_t count) {
     size_t nleft = count;
 
     while (nleft > 0) {
-        err = write(sock, buffer, nleft);
+        err = send(sock, buffer, nleft, 0);
         if (err < 0) {
             switch (errno) {
             case EINTR:
@@ -302,7 +376,7 @@ int mt_sock_recv(int sock, char *buffer, size_t count) {
     size_t nleft = count;
 
     while (nleft > 0) {
-        err = read(sock, buffer, nleft);
+        err = recv(sock, buffer, nleft, 0);
         if (err < 0) {
             if (errno == EINTR || errno == EAGAIN)
                 break;
@@ -383,7 +457,7 @@ int mt_sock_set_nonblocking(int sock, int nonblocking) {
     return err;
 }
 
-int mt_sock_get_sa_family(int sock) {
+int mt_sock_get_sock_domain(int sock) {
     struct sockaddr_storage sa;
     socklen_t len = sizeof(sa);
 

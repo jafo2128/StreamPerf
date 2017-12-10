@@ -19,18 +19,13 @@
  *      Original Author: shareviews@sina.com (2017-12-XX)
  *   Inspiration Source: iperf
  */
- 
+
 #ifndef MTPERF_H_INCLUDED
 #define MTPERF_H_INCLUDED
 
-#ifdef WIN32
-    #include <Winsock2.h>
-#else
-    #include <sys/types.h>
-    #include <sys/socket.h>
-    #define closesocket close
-#endif
+
 #include "MTTimer.h"
+#include "MTSockUtil.h"
 
 /* default settings */
 #define P_TCP SOCK_STREAM
@@ -43,6 +38,7 @@
 #define DEFAULT_UDP_RATE (1024 * 1024) /* 1 Mbps */
 #define DEFAULT_OMIT 0 /* seconds */
 #define DEFAULT_DURATION 10 /* seconds */
+#define DEFAULT_SOCK_TIMEOUT 1000 /* ms-millisecond */
 
 #define uS_TO_NS 1000
 #define SEC_TO_US 1000000LL
@@ -67,36 +63,82 @@
 #define MAX_BURST 1000
 #define MAX_MSS (9 * 1024)
 #define MAX_STREAMS 128
+#define CIPHER "123456789"
 
 struct task_stats
 {
-    int       domain;               /* AF_INET or AF_INET6 */
-    int       socket_bufsize;       /* window size for TCP */
-    int       blksize;              /* size of read/writes (-l) */
-    uint64_t  rate;                 /* target data rate for application pacing*/
-    uint64_t  fqrate;               /* target data rate for FQ pacing*/
-    int	      pacing_timer;	        /* pacing timer in microseconds */
-    int       burst;                /* packets per burst */
+    int sock;
+    /*other parameters*/
     int       mss;                  /* for TCP MSS */
     int       ttl;                  /* IP TTL option */
     int       tos;                  /* type of service bit */
     int       flowlabel;            /* IPv6 flow label */
-    uint64_t  bytes;                 /* number of bytes to send */
-    uint64_t  blocks;                /* number of blocks (packets) to send */
     char      unit_format;          /* -f */
-    int	      connect_timeout;	    /* socket connection timeout, in ms */
+
+    /*quality of transfer service*/
+    uint64_t  bytes_recv_interval;
+    uint64_t  bytes_recv;
+    uint32_t  blocks_recv;
+    uint64_t  bytes_send_interval;
+    uint64_t  bytes_send;           /* number of bytes to send */
+    uint32_t  blocks_send;          /* number of blocks (packets) to send */
+    uint64_t  rate;                 /* target data rate for application pacing*/
+    uint64_t  fqrate;               /* target data rate for FQ pacing*/
+    int	      pacing_timer;	        /* pacing timer in microseconds */
+    int       burst;                /* packets per burst */
+
+    /*quality of packet*/
+    uint32_t packet_index;
+    uint32_t packet_cnt_outorder;
+    uint32_t packet_cnt_error;
+
+    /*
+     * for udp measurements - This can be a structure outside stream, and
+     * stream can have a pointer to this
+     */
+    int       packet_count;
+    int	      peer_packet_count;
+    int       omitted_packet_count;
+    uint64_t  jitter;       /*us*/
+    uint64_t  prev_transit; /*us*/
+    int       outoforder_packets;
+    int       omitted_outoforder_packets;
+    int       cnt_error;
+    int       omitted_cnt_error;
 };
 
+struct addrinfo;
 struct task_settings
 {
-    char      role;                             /* 'c' lient or 's' erver */
-    int       sender;                           /* client & !reverse or server & reverse */
-    int       sender_has_retransmits;
-    char     *server_hostname;                  /* -c option */
-    char     *tmp_template;
-    char     *bind_address;                     /* first -B option */
-    int       bind_port;                        /* --cport option */
-    int       server_port;
+    char      role;                 /* 'c' lient or 's' erver */
+    int       rand_cnt;             /* rand test count */
+
+    /* client */
+    char  *local_host;
+    int    local_port;
+    char  *local_address;           /* first -B option */
+    struct addrinfo *local_ai;
+
+    /* server*/
+    char  *remote_host;             /* -c option */
+    int    remote_port;
+
+    /*socket parameters*/
+    int       sock_domain;          /*adress family: AF_INET AF_INET6 AF_LOCAL AF_ROUTE*/
+    int       sock_type;            /*AF_SOCK_STREAM SOCK_DGRAM SOCK_RAW SOCK_PACKET SOCK_SEQPACKET*/
+    int       sock_proto;           /*IPPROTO_TCP IPPTOTO_UDP IPPROTO_SCTP IPPROTO_TIPC*/
+    int       sock_bufsize;         /* window size for TCP */
+    int	      sock_timeout;	        /* socket connection timeout, in ms */
+    int       block_size;           /* size of read/writes(-l)*/
+    int       max_fd;
+    fd_set    read_set;             /* set of read sockets */
+    fd_set    write_set;            /* set of write sockets */
+
+    int       ctrl_sck;
+    int       listener;
+    int       prot_listener;
+
+     /* proto variables for Options */
     int       omit;                             /* duration of omit period (-O flag) */
     int       duration;                         /* total duration of test (-t flag) */
     char     *diskfile_name;                    /* -F option */
@@ -107,17 +149,9 @@ struct task_settings
     char     *logfile;                          /* --logfile option */
     FILE     *outfile;
 
-    int       ctrl_sck;
-    int       listener;
-    int       prot_listener;
-
-    /* bind */
-    char *name;
-    struct addrinfo *ai;
-
     /* boolean variables for Options */
     int       no_delay;                         /* -N option */
-    int       reverse;                          /* -R option */
+    int       reverse;                          /* -R option reverse send/recv operations*/
     int	      verbose;                          /* -V option - verbose mode */
     int	      zerocopy;                         /* -Z option - use sendfile */
     int       debug;				            /* -d option - enable debug */
@@ -125,11 +159,6 @@ struct task_settings
     int	      udp_counters_64bit;		        /* --use-64-bit-udp-counters */
     int       forceflush;                       /* --forceflush - flushing output at every interval */
     int	      multisend;
-
-    /* Select related parameters */
-    int       max_fd;
-    fd_set    read_set;                         /* set of read sockets */
-    fd_set    write_set;                        /* set of write sockets */
 
     /* Interval related members */
     signed char state;
@@ -143,9 +172,6 @@ struct task_settings
     Timer     *timer;
     Timer     *stats_timer;
     Timer     *reporter_timer;
-
-    uint64_t   bytes_sent;
-    uint64_t   blocks_sent;
 };
 
 #endif // MTPERF_H_INCLUDED

@@ -20,7 +20,7 @@
  *   Second Author: iperf owned by the U.S. Department of Energy
  *       Modified by: shareviews@sina.com (2017-12-XX)
  */
- 
+
 #ifndef MTTIMER_H_INCLUDED
 #define MTTIMER_H_INCLUDED
 
@@ -59,6 +59,8 @@ typedef struct TimerStruct
     struct TimerStruct* next;
     int hash;
 } Timer;
+
+extern uint64_t timeval_diff(struct timeval *tv_a, struct timeval *tv_b);
 
 /* Set up a timer, either periodic or one-shot. Returns (Timer*) 0 on errors. */
 extern Timer* timer_create( struct timeval* nowP, TimerProc* timer_proc,

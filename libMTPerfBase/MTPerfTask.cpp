@@ -30,7 +30,9 @@
  **/
 MTPerfTask::MTPerfTask():MTTask(){
     mTaskSettings = NULL;
-    mTaskStats   = NULL;
+    mTaskStats    = NULL;
+    mTsBuffer     = NULL;
+    mTagName      = NULL;
     initDefaultTaskParams();
 }
 
@@ -57,44 +59,59 @@ int MTPerfTask::initDefaultTaskParams(){
     /*init task settings*/
     mTaskSettings = (struct task_settings*)malloc(sizeof(struct task_settings));
     memset(mTaskSettings, 0, sizeof(struct task_settings));
-    mTaskSettings->omit = DEFAULT_OMIT;
-    mTaskSettings->duration = DEFAULT_DURATION;
+    mTaskSettings->sock_domain   = AF_UNSPEC;
+    mTaskSettings->sock_type     = 0;    /* unknown*/
+    mTaskSettings->omit          = DEFAULT_OMIT;
+    mTaskSettings->sock_bufsize  = 0;    /* use autotuning */
+    mTaskSettings->block_size    = DEFAULT_TCP_BLKSIZE;
+    mTaskSettings->remote_port   = DEFAULT_PORT;
+    mTaskSettings->local_port    = DEFAULT_PORT;
+    mTaskSettings->sock_timeout  = DEFAULT_SOCK_TIMEOUT;
+
+    mTaskSettings->duration      = DEFAULT_DURATION;
     mTaskSettings->diskfile_name = (char*) 0;
-    mTaskSettings->title = NULL;
-    mTaskSettings->congestion = NULL;
+    mTaskSettings->title         = NULL;
+    mTaskSettings->congestion    = NULL;
     mTaskSettings->congestion_used = NULL;
     mTaskSettings->remote_congestion_used = NULL;
-    mTaskSettings->server_port = DEFAULT_PORT;
-    mTaskSettings->ctrl_sck = -1;
+    mTaskSettings->ctrl_sck      = -1;
     mTaskSettings->prot_listener = -1;
 
     //mTaskSettings->stats_callback = iperf_stats_callback;
     //mTaskSettings->reporter_callback = iperf_reporter_callback;
-
     mTaskSettings->stats_interval = mTaskSettings->reporter_interval = 1;
     mTaskSettings->multisend      = 10;	/* arbitrary */
 
     /*init task stats*/
     mTaskStats = (struct task_stats*)malloc(sizeof(struct task_stats));
     memset(mTaskStats, 0, sizeof(struct task_stats));
-    mTaskStats->domain = AF_UNSPEC;
     mTaskStats->unit_format = 'a';
-    mTaskStats->socket_bufsize = 0;    /* use autotuning */
-    mTaskStats->blksize = DEFAULT_TCP_BLKSIZE;
     mTaskStats->rate = 0;
     mTaskStats->fqrate = 0;
     mTaskStats->pacing_timer = 1000;
     mTaskStats->burst = 0;
     mTaskStats->mss = 0;
-    mTaskStats->bytes = 0;
-    mTaskStats->blocks = 0;
-    mTaskStats->connect_timeout = -1;
+    mTaskStats->bytes_recv_interval = 0;
+    mTaskStats->bytes_send_interval = 0;
+    mTaskStats->bytes_recv  = mTaskStats->bytes_send  = 0;
+    mTaskStats->blocks_recv = mTaskStats->blocks_send = 0;
+    /*quality of packet*/
+    mTaskStats->packet_index        = 0;
+    mTaskStats->packet_cnt_outorder = 0;
+    mTaskStats->packet_cnt_error    = 0;
 
     return 0;
 }
 
 int MTPerfTask::doTask(void* args) {
     MTLog::LogEx(TAG, __FUNCTION__, "MTPerfTask(%p) doTask(%p)...", this, mTaskSettings);
+    return PERF_ERROR_NONE;
+}
+
+int  MTPerfTask::recordNalCRC(const char* rawCRC) {
+    return PERF_ERROR_NONE;
+}
+int  MTPerfTask::calcNalCRC(const char* nal, char* crc) {
     return PERF_ERROR_NONE;
 }
 
