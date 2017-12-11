@@ -6,6 +6,7 @@
 * Applications requiring ordered reliable delivery of streams of data should use the Transmission Control Protocol (TCP) 
 
 ## UDP Client/Server Model
+``` 
 --------------------------------      --------------------------------
     socket(s_domain, s_type)              socket(s_domain, s_type)
 --------------------------------      --------------------------------
@@ -16,8 +17,10 @@
          close(sock)                          close(sock)
 --------------------------------      --------------------------------
                          Fig1: UDP Client/Server Model
+``` 
 
 ## UDP Header Format
+``` 
                   0      7 8     15 16    23 24    31
                  +--------+--------+--------+--------+
                  |     Source      |   Destination   |
@@ -31,14 +34,13 @@
                  +---------------- ...
 
                       Fig2: User Datagram Header Format
-
+``` 
 
 ## Relation to Other Protocols
 
   The following diagram illustrates the place of the TCP in the protocol
   hierarchy:
-
-
+``` 
        +------+ +-----+ +-----+       +-----+
        |Telnet| | FTP | |Voice|  ...  |     |  Application Level
        +------+ +-----+ +-----+       +-----+
@@ -54,8 +56,8 @@
               +---------------------------+
               |   Local Network Protocol  |    Network Level
               +---------------------------+
-
                          Fig3: Protocol Relationships
+``` 
 
 ## References: TCP/IP Basic Knowledge
 * [Transmission Control Protocol(TCP)](https://en.wikipedia.org/wiki/Transmission_Control_Protocol)  
