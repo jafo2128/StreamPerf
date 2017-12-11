@@ -4,19 +4,27 @@
 TCP provides reliable, ordered, and error-checked delivery of a stream of octets between applications running on hosts communicating by an IP network. Major Internet applications such as the World Wide Web, email, remote administration, and file transfer rely on TCP. Applications that do not require reliable data stream service may use the User Datagram Protocol (UDP), which provides a connectionless datagram service that emphasizes reduced latency over reliability.
 
 ## TCP Client/Server Model
-+--------------------------------+-------+---------------------------------+  
-+----socket(s_domain, s_type)----+-------+----socket(s_domain, s_type)-----+  
-+--------bind(sock, ...)---------+-------+---------bind(sock, ...)---------+  
-+--------listen(sock, ...)-------+-------+---------------------------------+  
-+--------select() then accept()--+-------+---------connect(sock, ...)------+     
-+--------select() then send/revc-+-<--->-+-------select() then send/revc---+  
-+-----------close(sock)----------+-------+-----------close(sock)-----------+  
-+--------------------------------+-------+---------------------------------+  
+```
+--------------------------------      --------------------------------
+    socket(s_domain, s_type)              socket(s_domain, s_type)
+--------------------------------      --------------------------------
+         bind(sock, ...)                      bind(sock, ...)
+--------------------------------      --------------------------------
+         listen(sock, ...) 
+--------------------------------      --------------------------------
+        select() then accept()               connect(sock, ...)
+--------------------------------      --------------------------------
+    select() then send/revc    <---->     select() then send/revc
+--------------------------------      --------------------------------
+          close(sock)                            close(sock)
+--------------------------------      --------------------------------
                          Fig1: TCP Client/Server Model
+```
 
 ## TCP Header Format
-    0                   1                   2                   3
-    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1  
+```
+    0                   1                   2                   3  
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+  
    |          Source Port          |       Destination Port        |  
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+  
@@ -35,14 +43,14 @@ TCP provides reliable, ordered, and error-checked delivery of a stream of octets
    |                             data                              |  
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+  
 
-                            Fig2: TCP Header Format
+                            Fig2: TCP Header  Format
+```
 
 ## Relation to Other Protocols
 
   The following diagram illustrates the place of the TCP in the protocol
   hierarchy:
-
-
+ ```
        +------+ +-----+ +-----+       +-----+
        |Telnet| | FTP | |Voice|  ...  |     |  Application Level
        +------+ +-----+ +-----+       +-----+
@@ -60,6 +68,7 @@ TCP provides reliable, ordered, and error-checked delivery of a stream of octets
               +---------------------------+
 
                          Fig3: Protocol Relationships
+```   
 
 ## References: TCP/IP Basic Knowledge
 * [Transmission Control Protocol(TCP)](https://en.wikipedia.org/wiki/Transmission_Control_Protocol)  
