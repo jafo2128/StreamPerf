@@ -1,26 +1,17 @@
 # Streaming Task Perf over TCP(Transmission Control Protocol)
 
 ## TCP Features
-* RTSP defines control sequences useful in controlling multimedia playback.
-* RTSP control channel uses underlying protocols such as RTP/RTCP/RSVP protocols.
-* RTSP uses RTP/RTCP/RSVP allows for the implementation of rate adaptation.
-* RTSP Data channel uses TCP or UDP protocols.
-* Default RTSP port number is 554[3] for both TCP and UDP
+TCP provides reliable, ordered, and error-checked delivery of a stream of octets between applications running on hosts communicating by an IP network. Major Internet applications such as the World Wide Web, email, remote administration, and file transfer rely on TCP. Applications that do not require reliable data stream service may use the User Datagram Protocol (UDP), which provides a connectionless datagram service that emphasizes reduced latency over reliability.
 
 ## TCP Client/Server Model
-+--------------------------------+      +--------------------------------+  
-    socket(s_domain, s_type)               socket(s_domain, s_type)  
-+--------------------------------+      +--------------------------------+  
-        bind(sock, ...)                        bind(sock, ...)  
-+--------------------------------+      +--------------------------------+  
-        listen(sock, ...)   
-+--------------------------------+      +--------------------------------+  
-        select() then accept()                connect(sock, ...)  
-+--------------------------------+      +--------------------------------+  
-    select() then send/revc       <---->    select() then send/revc  
-+--------------------------------+      +--------------------------------+  
-            close(sock)                            close(sock)  
-+--------------------------------+      +--------------------------------+  
++--------------------------------+-------+---------------------------------+  
++----socket(s_domain, s_type)----+-------+----socket(s_domain, s_type)-----+  
++--------bind(sock, ...)---------+-------+---------bind(sock, ...)---------+  
++--------listen(sock, ...)-------+-------+---------------------------------+  
++--------select() then accept()--+-------+---------connect(sock, ...)------+     
++--------select() then send/revc-+-<--->-+-------select() then send/revc---+  
++-----------close(sock)----------+-------+-----------close(sock)-----------+  
++--------------------------------+-------+---------------------------------+  
                          Fig1: TCP Client/Server Model
 
 ## TCP Header Format
