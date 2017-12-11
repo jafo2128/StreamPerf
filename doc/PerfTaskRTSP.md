@@ -8,6 +8,7 @@
 * Default RTSP port number is 554[3] for both TCP and UDP
 
 ## RTSP data-control stream separation
+``` 
 * Client->Server(CSeq=1)  Request: OPTIONS
 * Server->Client(CSeq=1) Response: OPTIONS DESCRIBE/SETUP/PLAY/PAUSE/TEARDOWN
 * Client->Server(CSeq=2)  Request: DESCRIBE
@@ -27,6 +28,7 @@
 * Server->Client(CSeq=7) Response: ....
 * Client->Server(CSeq=8)  Request: TEARDOWN rtsp://xxxx.ts RTSP/1.0; Session: 12345678
 * Server->Client(CSeq=8) Response: Session: 12345678
+``` 
 
 ## References: TCP/IP Basic Knowledge
 * [Transmission Control Protocol(TCP)](https://en.wikipedia.org/wiki/Transmission_Control_Protocol)  
