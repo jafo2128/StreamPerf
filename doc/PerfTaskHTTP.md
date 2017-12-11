@@ -7,6 +7,7 @@
 * HTTP allows systems to be built independently of the data being transferred.
 
 ## HTTP Client/Server Model(resemble TCP)
+``` 
 --------------------------------      --------------------------------
     socket(s_domain, s_type)              socket(s_domain, s_type)
 --------------------------------      --------------------------------
@@ -21,7 +22,7 @@
           close(sock)                            close(sock)
 --------------------------------      --------------------------------
                          Fig1: TCP Client/Server Model(resemble TCP)
-
+``` 
 ## Request Header Fields
 The request-header fields allow the client to pass additional information about the request, and about the client itself, to the server. 
           request-header = Accept                   ; Section 14.1
@@ -63,8 +64,7 @@ The first digit of the Status-Code defines the class of response. The last two d
 
   The following diagram illustrates the place of the TCP in the protocol
   hierarchy:
-
-
+``` 
        +------+ +-----+ +-----+       +-----+
        |Telnet| | FTP | |Voice|  ...  |     |  Application Level
        +------+ +-----+ +-----+       +-----+
@@ -82,7 +82,7 @@ The first digit of the Status-Code defines the class of response. The last two d
               +---------------------------+
 
                          Fig3: Protocol Relationships
-
+``` 
 ## References: TCP/IP Basic Knowledge
 * [Transmission Control Protocol(TCP)](https://en.wikipedia.org/wiki/Transmission_Control_Protocol)  
 * [Transmission Control Protocol(TCP-RFC 793)](https://tools.ietf.org/html/rfc793)  
