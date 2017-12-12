@@ -28,6 +28,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#define US_TO_NS 1000
+#define SEC_TO_US 1000000LL
+#define SEC_TO_NS 1000000000LL	/* too big for enum/const on some platforms */
+
 /* TimerClientData is an opaque value that tags along with a timer.  The
 ** client can use it for whatever, and it gets passed to the callback when
 ** the timer triggers.
