@@ -60,6 +60,8 @@ typedef struct TimerStruct
     int hash;
 } Timer;
 
+extern void msleep(uint32_t ms);
+
 extern uint64_t timeval_diff(struct timeval *tv_a, struct timeval *tv_b);
 
 /* Set up a timer, either periodic or one-shot. Returns (Timer*) 0 on errors. */
