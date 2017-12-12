@@ -26,6 +26,11 @@
 
 #include "MTTimer.h"
 
+#ifdef WIN32
+#include <windows.h> //Sleep(millisecond)
+#else
+#include <unistd.h> //usleep(microsecond)
+#endif /*WIN32*/
 
 static Timer* timers = NULL;
 static Timer* free_timers = NULL;
@@ -45,6 +50,14 @@ static void getnow( struct timeval* nowP, struct timeval* nowP2 ) {
     } else {
         (void) gettimeofday( nowP2, NULL );
     }
+}
+
+void msleep(uint32_t ms){
+#ifdef WIN32
+    Sleep(ms); //millisecond
+#else
+    usleep(ms*1000)
+#endif // WIN32
 }
 
 uint64_t timeval_diff(struct timeval * tv_a, struct timeval * tv_b)
