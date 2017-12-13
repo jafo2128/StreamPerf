@@ -20,15 +20,14 @@
  *   Inspiration Source: iperf
  */
 
- 
+
 #ifndef DEFINE_H_INCLUDED
 #define DEFINE_H_INCLUDED
 
-#include "MTLog.h"
+#include "PerfBasic/MTPerfUtil.h"
+#include "PerfBasic/MTLog.h"
+#include "PerfBasic/OSTime.h"
 #include "MTTaskRunner.h"
 #include "MTPerfTask.h"
-#include "MTPerfUtil.h"
-
-//#ifdef WIN32
 
 #endif // DEFINE_H_INCLUDED

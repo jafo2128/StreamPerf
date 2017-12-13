@@ -26,7 +26,6 @@
 
 #include "MTTimer.h"
 
-
 static Timer* timers = NULL;
 static Timer* free_timers = NULL;
 
@@ -49,15 +48,7 @@ static void getnow( struct timeval* time_old, struct timeval* time_now ) {
 
 uint64_t timeval_diff(struct timeval * tv_a, struct timeval * tv_b)
 {
-    uint64_t time1, time2;
-
-    time1 = tv_a->tv_sec*1000000 + tv_a->tv_usec;
-    time2 = tv_b->tv_sec*1000000 + tv_b->tv_usec;
-
-    time1 = time1 - time2;
-    if (time1 < 0)
-        time1 = -time1;
-    return time1;
+    return (uint64_t)(tv_b->tv_sec-tv_a->tv_sec)*1000000+(uint64_t)(tv_b->tv_usec-tv_a->tv_usec);
 }
 
 static void list_add( Timer* t )

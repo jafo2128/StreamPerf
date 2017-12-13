@@ -16,12 +16,12 @@
  *  along with MediaTime; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
- *  Original Author: Team XBMC 
+ *  Original Author: Team XBMC
  *      Modified by: shareviews@sina.com (2017-12-XX) without permission
  */
 
-#include "md5.h"
-#include "MTUtils/StringUtils.h"
+#include "MTMD5.h"
+//#include "MTUtils/StringUtils.h"
 
 typedef unsigned char md5byte;
 
@@ -36,7 +36,7 @@ MTMD5::MTMD5(void)
   MD5Init(&m_ctx);
 }
 
-XBMC::MTMD5::~MTMD5(void)
+MTMD5::~MTMD5(void)
 {}
 
 void MTMD5::append(const void *inBuf, size_t inLen)
@@ -56,14 +56,15 @@ void MTMD5::getDigest(unsigned char digest[16])
 
 std::string MTMD5::getDigest()
 {
-  unsigned char szBuf[16] = {'\0'};
-  getDigest(szBuf);
-  return StringUtils::Format("%02X%02X%02X%02X%02X%02X%02X%02X"\
+    unsigned char szBuf[16] = {'\0'};
+    getDigest(szBuf);
+    /*return StringUtils::Format("%02X%02X%02X%02X%02X%02X%02X%02X"\
                              "%02X%02X%02X%02X%02X%02X%02X%02X",
                              szBuf[0], szBuf[1], szBuf[2],
                              szBuf[3], szBuf[4], szBuf[5], szBuf[6], szBuf[7], szBuf[8],
                              szBuf[9], szBuf[10], szBuf[11], szBuf[12], szBuf[13], szBuf[14],
-                             szBuf[15]);
+                             szBuf[15]);*/
+    return NULL;
 }
 
 std::string MTMD5::GetMD5(const std::string &text)
@@ -97,14 +98,13 @@ std::string MTMD5::GetMD5(const std::string &text)
  * Still in the public domain.
  */
 
-#include "md5.h"
+#include "MTMD5.h"
 
 #include <sys/types.h>		/* for stupid systems */
 #include <string.h>		/* for memcpy() */
 
 #ifdef WORDS_BIGENDIAN
-void
-byteSwap(uint32_t *buf, unsigned words)
+void byteSwap(uint32_t *buf, unsigned words)
 {
 	md5byte *p = (md5byte *)buf;
 

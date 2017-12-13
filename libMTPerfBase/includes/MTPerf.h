@@ -40,10 +40,6 @@
 #define DEFAULT_DURATION 10 /* seconds */
 #define DEFAULT_SOCK_TIMEOUT 1000 /* ms-millisecond */
 
-#define uS_TO_NS 1000
-#define SEC_TO_US 1000000LL
-#define SEC_TO_NS 1000000000LL	/* too big for enum/const on some platforms */
-
 #define MAX_RESULT_STRING 4096
 #define MAX_UDP_BUFFER_EXTRA 1024
 #define MAX_BUFFER_SIZE 1024

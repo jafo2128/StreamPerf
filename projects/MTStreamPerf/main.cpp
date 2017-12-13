@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "Define.h"
 #include "MTPerfTaskUDP.h"
+#include "MTPerfTaskQOS.h"
+
 using namespace std;
 
 #define TAG "MTStreamPerf"
@@ -23,7 +25,7 @@ int main(int argc, char *argv[])
     AndroidLogListener *listener = new AndroidLogListener();
     MTLog::setLogListener(listener);
 
-    MTTaskRunner* scheduler = new MTTaskRunner(5/*max_threads*/, 30/*max_tasks*/);
+    MTTaskRunner* scheduler = new MTTaskRunner(2/*max_threads*/, 30/*max_tasks*/);
     scheduler->start();
 
     //MTPerfTask*  taskHTTP = new MTPerfTaskHTTP();
@@ -31,13 +33,17 @@ int main(int argc, char *argv[])
     //MTPerfTask*  taskTCP = new MTPerfTaskTCP();
     MTPerfTask*  server_udp = new MTPerfTaskUDPServer();
     MTPerfTask*  client_udp = new MTPerfTaskUDPClient();
+    MTPerfTask*  client_qos = new MTPerfTaskQOS();
+    MTPerfTask*  server_qos = new MTPerfTaskQOS();
     //scheduler->addTask(PRIORITY_FIFO, taskHTTP);
     //scheduler->addTask(PRIORITY_FIFO, taskRTSP);
     //scheduler->addTask(PRIORITY_FIFO, taskTCP);
-    scheduler->addTask(PRIORITY_FIFO, server_udp);
-    scheduler->addTask(PRIORITY_FIFO, client_udp);
+    //scheduler->addTask(PRIORITY_FIFO, server_udp);
+    //scheduler->addTask(PRIORITY_FIFO, client_udp);
+    //scheduler->addTask(PRIORITY_FIFO, client_qos);
+    //scheduler->addTask(PRIORITY_FIFO, server_qos);
+    server_qos->doTask(NULL);
 
-    usleep(2000*1000);
     delete scheduler;
     scheduler = NULL;
     //MTPerfUtil::getInstance()->dumpServerPerf();

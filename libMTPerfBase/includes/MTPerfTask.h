@@ -39,12 +39,12 @@ public:
     struct task_settings* getTaskSettings();
     struct task_stats*    getTaskStats();
 
-    virtual int  netInit() = 0;
-    virtual int  netListen() = 0;
-    virtual int  netAccept() = 0;
-    virtual int  netConnect() = 0;
-    virtual int  netSend() = 0;
-    virtual int  netRecv() = 0;
+    virtual int  netInit()   {return -1;};
+    virtual int  netListen() {return -1;};
+    virtual int  netAccept() {return -1;};
+    virtual int  netConnect(){return -1;};
+    virtual int  netSend()   {return -1;};
+    virtual int  netRecv()   {return -1;};
     virtual int  doTask(void* args);
     virtual int  recordNalCRC(const char* rawCRC);
     virtual int  calcNalCRC(const char* nal, char* crc);

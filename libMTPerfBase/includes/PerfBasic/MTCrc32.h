@@ -16,20 +16,20 @@
  *  along with MediaTime; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
- *   original author: Team XBMC 
+ *   original author: Team XBMC
  *       Modified by: shareviews@sina.com (2017-12-XX) without permission
  */
 
-#ifdef MTCRC32_H_INCLUDE
-#define MTCRC32_H_INCLUDE
+#ifndef MT_CRC32_H_INCLUDE
+#define MT_CRC32_H_INCLUDE
 
 #include <string>
 #include <stdint.h>
 
-class Crc32
+class MTCrc32
 {
 public:
-  Crc32();
+  MTCrc32();
   void Reset();
   void Compute(const char* buffer, size_t count);
   static uint32_t Compute(const std::string& strValue);
@@ -44,5 +44,5 @@ private:
   uint32_t m_crc;
 };
 
-#endif
+#endif /*MT_CRC32_H_INCLUDE*/
 

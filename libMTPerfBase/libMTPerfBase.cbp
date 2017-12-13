@@ -18,6 +18,7 @@
 					<Add option="-std=c++11" />
 					<Add option="-m32" />
 					<Add directory="includes" />
+					<Add directory="includes/PerfBasic" />
 				</Compiler>
 				<Linker>
 					<Add option="-m32" />
@@ -38,31 +39,37 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="MTBase64.cpp" />
-		<Unit filename="MTLog.cpp" />
 		<Unit filename="MTPerfTask.cpp" />
+		<Unit filename="MTPerfTaskQOS.cpp" />
 		<Unit filename="MTPerfTaskUDP.cpp" />
-		<Unit filename="MTPerfUtil.cpp" />
-		<Unit filename="MTSockUtil.cpp" />
 		<Unit filename="MTTask.cpp" />
 		<Unit filename="MTTaskRunner.cpp" />
 		<Unit filename="MTTimer.cpp" />
+		<Unit filename="PerfBasic/MTBase64.cpp" />
+		<Unit filename="PerfBasic/MTCrc32.cpp" />
+		<Unit filename="PerfBasic/MTLog.cpp" />
+		<Unit filename="PerfBasic/MTMD5.cpp" />
+		<Unit filename="PerfBasic/MTPerfUtil.cpp" />
+		<Unit filename="PerfBasic/MTSockUtil.cpp" />
+		<Unit filename="PerfBasic/MTTimer.cpp" />
+		<Unit filename="PerfBasic/OSTime.cpp" />
 		<Unit filename="includes/Define.h" />
-		<Unit filename="includes/MTBase64.h" />
-		<Unit filename="includes/MTCrc32.h" />
-		<Unit filename="includes/MTLog.h" />
-		<Unit filename="includes/MTMD5.h" />
 		<Unit filename="includes/MTPerf.h" />
 		<Unit filename="includes/MTPerfTask.h" />
+		<Unit filename="includes/MTPerfTaskQos.h" />
+		<Unit filename="includes/MTPerfTaskRTSP.h" />
+		<Unit filename="includes/MTPerfTaskTCP.h" />
 		<Unit filename="includes/MTPerfTaskUDP.h" />
-		<Unit filename="includes/MTPerfUtil.h" />
-		<Unit filename="includes/MTRTSP.h" />
-		<Unit filename="includes/MTRTSPClient.h" />
-		<Unit filename="includes/MTSockUtil.h" />
 		<Unit filename="includes/MTTask.h" />
 		<Unit filename="includes/MTTaskRunner.h" />
-		<Unit filename="includes/MTTimer.h" />
-		<Unit filename="includes/RTP.h" />
+		<Unit filename="includes/PerfBasic/MTBase64.h" />
+		<Unit filename="includes/PerfBasic/MTCrc32.h" />
+		<Unit filename="includes/PerfBasic/MTLog.h" />
+		<Unit filename="includes/PerfBasic/MTMD5.h" />
+		<Unit filename="includes/PerfBasic/MTPerfUtil.h" />
+		<Unit filename="includes/PerfBasic/MTSockUtil.h" />
+		<Unit filename="includes/PerfBasic/MTTimer.h" />
+		<Unit filename="includes/PerfBasic/OSTime.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

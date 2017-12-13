@@ -16,14 +16,13 @@
  *  along with MediaTime; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
- *  Original Author: Team XBMC 
+ *  Original Author: Team XBMC
  *      Modified by: shareviews@sina.com (2017-12-XX) without permission
  */
 
-
 #include "MTCrc32.h"
 
-uint32_t  crc_tab[256] =
+uint32_t crc_tab[256] =
 {
  0x00000000L, 0x04C11DB7L, 0x09823B6EL, 0x0D4326D9L,
  0x130476DCL, 0x17C56B6BL, 0x1A864DB2L, 0x1E475005L,
@@ -91,30 +90,30 @@ uint32_t  crc_tab[256] =
  0xBCB4666DL, 0xB8757BDAL, 0xB5365D03L, 0xB1F740B4L
 };
 
-Crc32::Crc32()
+MTCrc32::MTCrc32()
 {
   Reset();
 }
 
-void Crc32::Reset()
+void MTCrc32::Reset()
 {
   m_crc = 0xFFFFFFFF;
 }
 
-void Crc32::Compute(const char* buffer, size_t count)
+void MTCrc32::Compute(const char* buffer, size_t count)
 {
    while (count--)
       m_crc = (m_crc << 8) ^ crc_tab[((m_crc >> 24) ^ *buffer++) & 0xFF];
 }
 
-uint32_t Crc32::Compute(const std::string& strValue)
+uint32_t MTCrc32::Compute(const std::string& strValue)
 {
-  Crc32 crc;
+  MTCrc32 crc;
   crc.Compute(strValue.c_str(), strValue.size());
   return crc;
 }
 
-uint32_t Crc32::ComputeFromLowerCase(const std::string& strValue)
+uint32_t MTCrc32::ComputeFromLowerCase(const std::string& strValue)
 {
   std::string strLower = strValue;
   //StringUtils::ToLower(strLower);
